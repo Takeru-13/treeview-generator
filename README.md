@@ -5,7 +5,7 @@
 ![screenshot](public/tree.svg)
 
 ## 概要
-
+<pre> \```
 └── 📁 treeview-generator
     ├── 📄 eslint.config.mjs
     ├── 🟦 next-env.d.ts
@@ -30,7 +30,7 @@
     │   └── 📁 components
     │       └── 🔷 TreeViewGenerator.tsx
     └── 🧾 tsconfig.json
-
+\``` </pre>
 
 
 ---
