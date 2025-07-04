@@ -2,7 +2,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { Upload, Copy, Check, Folder, Settings, X, Download } from 'lucide-react';
 
-
 interface FileNode {
   name: string;
   type: 'file' | 'folder';
@@ -18,6 +17,20 @@ interface TreeSettings {
   maxDepth: number;
   excludePatterns: string[];
   sortBy: 'name' | 'type' | 'size';
+}
+
+// FileSystemEntry型の定義を追加
+interface FileSystemEntry {
+  isFile: boolean;
+  isDirectory: boolean;
+  name: string;
+  fullPath: string;
+  file?: (callback: (file: File) => void) => void;
+  createReader?: () => FileSystemDirectoryReader;
+}
+
+interface FileSystemDirectoryReader {
+  readEntries: (callback: (entries: FileSystemEntry[]) => void) => void;
 }
 
 const TreeViewGenerator: React.FC = () => {
@@ -198,11 +211,10 @@ const TreeViewGenerator: React.FC = () => {
     }
   }, [buildFileTree, generateTreeString]);
 
-
   // ファイルツリーを再帰的に走査してファイル配列を構築
-  const traverseFileTree = useCallback((entry: any, path: string, files: File[]) => {
+  const traverseFileTree = useCallback((entry: FileSystemEntry, path: string, files: File[]) => {
     return new Promise<void>((resolve) => {
-      if (entry.isFile) {
+      if (entry.isFile && entry.file) {
         entry.file((file: File) => {
           // webkitRelativePathを手動で設定
           const newFile = new File([file], file.name, {
@@ -217,9 +229,9 @@ const TreeViewGenerator: React.FC = () => {
           files.push(newFile);
           resolve();
         });
-      } else if (entry.isDirectory) {
+      } else if (entry.isDirectory && entry.createReader) {
         const dirReader = entry.createReader();
-        dirReader.readEntries((entries: any[]) => {
+        dirReader.readEntries((entries: FileSystemEntry[]) => {
           const promises = entries.map(childEntry => 
             traverseFileTree(childEntry, path + entry.name + '/', files)
           );
@@ -229,7 +241,7 @@ const TreeViewGenerator: React.FC = () => {
     });
   }, []);
 
-    // ドラッグ&ドロップ処理を修正
+  // ドラッグ&ドロップ処理を修正
   const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -241,7 +253,7 @@ const TreeViewGenerator: React.FC = () => {
       // DataTransferItemListから階層構造を保持したファイル情報を取得
       const promises = Array.from(items).map(async (item) => {
         if (item.kind === 'file') {
-          const entry = item.webkitGetAsEntry();
+          const entry = item.webkitGetAsEntry() as FileSystemEntry | null;
           if (entry) {
             await traverseFileTree(entry, '', files);
           }
@@ -312,53 +324,6 @@ const TreeViewGenerator: React.FC = () => {
 
   const stats = getFileStats();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -408,7 +373,7 @@ const TreeViewGenerator: React.FC = () => {
                 multiple
                 className="hidden"
                 onChange={handleFileInputChange}
-                {...({ webkitdirectory: '', directory: '' } as any)}
+                {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
               />
               
               {isProcessing && (
