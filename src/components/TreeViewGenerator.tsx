@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, Copy, Check, Folder, File as FileIcon, Settings, X, Filter, Download } from 'lucide-react';
+import { Upload, Copy, Check, Folder, Settings, X, Download } from 'lucide-react';
 
 
 interface FileNode {
@@ -141,7 +141,7 @@ const TreeViewGenerator: React.FC = () => {
     });
   }, [settings.sortBy]);
 
-  const generateTreeString = useCallback((nodes: FileNode[], depth = 0, isLast = false, prefix = ''): string => {
+  const generateTreeString = useCallback((nodes: FileNode[], depth = 0, prefix = ''): string => {
     if (depth > settings.maxDepth) return '';
     
     let result = '';
@@ -161,7 +161,7 @@ const TreeViewGenerator: React.FC = () => {
       
       if (node.children && node.children.length > 0) {
         const childPrefix = prefix + (isLastNode ? '    ' : '│   ');
-        result += generateTreeString(node.children, depth + 1, isLastNode, childPrefix);
+        result += generateTreeString(node.children, depth + 1, childPrefix);
       }
     });
     
@@ -198,35 +198,6 @@ const TreeViewGenerator: React.FC = () => {
     }
   }, [buildFileTree, generateTreeString]);
 
-  // ドラッグ&ドロップ処理を修正
-  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    
-    const items = e.dataTransfer.items;
-    if (items && items.length > 0) {
-      const files: File[] = [];
-      
-      // DataTransferItemListから階層構造を保持したファイル情報を取得
-      const promises = Array.from(items).map(async (item) => {
-        if (item.kind === 'file') {
-          const entry = item.webkitGetAsEntry();
-          if (entry) {
-            await traverseFileTree(entry, '', files);
-          }
-        }
-      });
-      
-      await Promise.all(promises);
-      
-      if (files.length > 0) {
-        // FileListに変換
-        const dt = new DataTransfer();
-        files.forEach(file => dt.items.add(file));
-        handleFileUpload(dt.files);
-      }
-    }
-  }, [handleFileUpload]);
 
   // ファイルツリーを再帰的に走査してファイル配列を構築
   const traverseFileTree = useCallback((entry: any, path: string, files: File[]) => {
@@ -257,6 +228,36 @@ const TreeViewGenerator: React.FC = () => {
       }
     });
   }, []);
+
+    // ドラッグ&ドロップ処理を修正
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const items = e.dataTransfer.items;
+    if (items && items.length > 0) {
+      const files: File[] = [];
+      
+      // DataTransferItemListから階層構造を保持したファイル情報を取得
+      const promises = Array.from(items).map(async (item) => {
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            await traverseFileTree(entry, '', files);
+          }
+        }
+      });
+      
+      await Promise.all(promises);
+      
+      if (files.length > 0) {
+        // FileListに変換
+        const dt = new DataTransfer();
+        files.forEach(file => dt.items.add(file));
+        handleFileUpload(dt.files);
+      }
+    }
+  }, [handleFileUpload, traverseFileTree]);
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
