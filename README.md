@@ -72,7 +72,7 @@
 
 ---
 
-## 使用技術
+## 使用技術 (Claude Code)
 
 - フレームワーク: [Next.js 14](w)
 - 言語: [TypeScript](w)
