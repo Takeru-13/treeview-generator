@@ -25,7 +25,7 @@
          alt="SeaSide – Home Desktop Screenshot"
          width="980" />
   </a>
-  <br/><sub>カレンダー＋感情アイコンの表示例（デスクトップ）</sub>
+  <br/><sub>実際の使用例</sub>
 </p>
 
 ---
